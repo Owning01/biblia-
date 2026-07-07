@@ -56,6 +56,9 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
       bookId: widget.bookId,
       chapter: _currentChapter,
     );
+    ref
+        .read(lastReadByBookProvider.notifier)
+        .setLastChapter(widget.bookId, _currentChapter);
   }
 
   @override

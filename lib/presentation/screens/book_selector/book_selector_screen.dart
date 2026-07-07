@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/bible_metadata.dart';
+import '../../providers/bible_providers.dart';
 import '../../providers/settings_providers.dart';
 
 class BookSelectorScreen extends ConsumerWidget {
@@ -51,6 +52,7 @@ class _BookList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lastReadByBook = ref.watch(lastReadByBookProvider);
     final filtered = bibleBooks.where((b) => b.testament == testament).toList();
     return ListView.separated(
       padding: const EdgeInsets.all(16),
@@ -59,14 +61,46 @@ class _BookList extends ConsumerWidget {
       itemBuilder: (context, index) {
         final book = filtered[index];
         final count = bookChapterCounts[book.id] ?? 1;
+        final lastCh = lastReadByBook[book.id.toString()];
         return ListTile(
           title: Text(
             book.name,
             style: const TextStyle(fontWeight: FontWeight.w500),
           ),
-          subtitle: Text('$count capítulos'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => context.push('/read/$versionId/${book.id}/1'),
+          subtitle: Text(
+            lastCh != null ? 'Cap. $lastCh de $count' : '$count capítulos',
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (lastCh != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$lastCh',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+          onTap: () {
+            final chapter = lastCh ?? 1;
+            context.push('/read/$versionId/${book.id}/$chapter');
+          },
         );
       },
     );
@@ -85,6 +119,7 @@ class _ChapterGridScreen extends ConsumerWidget {
     final count = bookChapterCounts[bookId] ?? 1;
     final summary = bookSummaries[bookId];
     final theme = Theme.of(context);
+    final lastChapter = ref.watch(lastReadByBookProvider)[bookId.toString()];
 
     return Scaffold(
       appBar: AppBar(title: Text(book?.name ?? '')),
@@ -151,10 +186,24 @@ class _ChapterGridScreen extends ConsumerWidget {
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final chapter = index + 1;
+                final isLastRead = chapter == lastChapter;
                 return FilledButton.tonal(
+                  style: isLastRead
+                      ? FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary.withValues(
+                            alpha: 0.2,
+                          ),
+                        )
+                      : null,
                   onPressed: () =>
                       context.push('/read/$versionId/$bookId/$chapter'),
-                  child: Text('$chapter'),
+                  child: isLastRead
+                      ? Icon(
+                          Icons.menu_book_rounded,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        )
+                      : Text('$chapter'),
                 );
               }, childCount: count),
             ),
