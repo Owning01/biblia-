@@ -85,6 +85,19 @@ final fontFamilyProvider = StateNotifierProvider<FontFamilyNotifier, String>((
   return FontFamilyNotifier(ref);
 });
 
+const _validFonts = {
+  'Inter',
+  'Roboto',
+  'Noto Serif',
+  'Lora',
+  'Merriweather',
+  'Playfair Display',
+  'JetBrains Mono',
+  'Crimson Text',
+  'Atkinson Hyperlegible',
+  'Source Serif 4',
+};
+
 class FontFamilyNotifier extends StateNotifier<String> {
   final Ref _ref;
 
@@ -94,7 +107,9 @@ class FontFamilyNotifier extends StateNotifier<String> {
 
   void _load() {
     final prefs = _ref.read(sharedPrefsProvider);
-    state = prefs.getString('font_family') ?? 'Inter';
+    final saved = prefs.getString('font_family') ?? 'Inter';
+    state = _validFonts.contains(saved) ? saved : 'Inter';
+    if (saved != state) prefs.setString('font_family', state);
   }
 
   void setFamily(String family) {

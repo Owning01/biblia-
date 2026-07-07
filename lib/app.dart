@@ -42,8 +42,22 @@ class BibliaApp extends ConsumerWidget {
     );
   }
 
+  static const _validFonts = {
+    'Inter',
+    'Roboto',
+    'Noto Serif',
+    'Lora',
+    'Merriweather',
+    'Playfair Display',
+    'JetBrains Mono',
+    'Crimson Text',
+    'Atkinson Hyperlegible',
+    'Source Serif 4',
+  };
+
   TextTheme _buildTextTheme(String bodyFont) {
-    final bodyStyle = GoogleFonts.getFont(bodyFont);
+    final safeFont = _validFonts.contains(bodyFont) ? bodyFont : 'Inter';
+    final bodyStyle = GoogleFonts.getFont(safeFont);
     return TextTheme(
       displayLarge: GoogleFonts.outfit(
         fontWeight: FontWeight.w700,
