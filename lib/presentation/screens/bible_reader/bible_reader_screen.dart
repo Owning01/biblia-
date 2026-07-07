@@ -136,6 +136,18 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
   }
 
   void _showVerseActions(Verse v) {
+    final highlights = ref.read(highlightsProvider).valueOrNull ?? [];
+    final currentHighlight = highlights.where(
+      (h) =>
+          h.versionId == widget.versionId &&
+          h.bookId == widget.bookId &&
+          h.chapter == _currentChapter &&
+          h.verseStart == v.verse,
+    );
+    final existingColor = currentHighlight.isNotEmpty
+        ? currentHighlight.first.color
+        : null;
+
     ref
         .read(
           bookmarkStatusProvider((
@@ -152,6 +164,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
             builder: (ctx) => VerseActionsSheet(
               verse: v,
               isBookmarked: isBookmarked,
+              highlightColor: existingColor,
               onBookmark: () => _toggleBookmark(v),
               onHighlight: (color) => _toggleHighlight(v, color),
               onNote: () => _addNote(v),

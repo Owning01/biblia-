@@ -43,6 +43,7 @@ class BibliaApp extends ConsumerWidget {
   }
 
   TextTheme _buildTextTheme(String bodyFont) {
+    final bodyStyle = GoogleFonts.getFont(bodyFont);
     return TextTheme(
       displayLarge: GoogleFonts.outfit(
         fontWeight: FontWeight.w700,
@@ -74,12 +75,12 @@ class BibliaApp extends ConsumerWidget {
         fontWeight: FontWeight.w600,
         letterSpacing: 0.3,
       ),
-      bodyLarge: TextStyle(fontFamily: bodyFont, height: 1.6),
-      bodyMedium: TextStyle(fontFamily: bodyFont, height: 1.5),
-      bodySmall: TextStyle(fontFamily: bodyFont, fontWeight: FontWeight.w400),
-      labelLarge: TextStyle(fontFamily: bodyFont),
-      labelMedium: TextStyle(fontFamily: bodyFont),
-      labelSmall: TextStyle(fontFamily: bodyFont),
+      bodyLarge: bodyStyle.copyWith(height: 1.6),
+      bodyMedium: bodyStyle.copyWith(height: 1.5),
+      bodySmall: bodyStyle.copyWith(fontWeight: FontWeight.w400),
+      labelLarge: bodyStyle,
+      labelMedium: bodyStyle,
+      labelSmall: bodyStyle,
     );
   }
 

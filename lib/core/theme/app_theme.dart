@@ -129,9 +129,13 @@ class FontOption {
 
   static const List<FontOption> options = [
     FontOption('Inter', 'Inter'),
-    FontOption('Noto Serif', 'NotoSerif'),
+    FontOption('Roboto', 'Roboto'),
+    FontOption('Noto Serif', 'Noto Serif'),
     FontOption('Lora', 'Lora'),
-    FontOption('JetBrains Mono', 'JetBrainsMono'),
+    FontOption('Merriweather', 'Merriweather'),
+    FontOption('Playfair Display', 'Playfair Display'),
+    FontOption('JetBrains Mono', 'JetBrains Mono'),
     FontOption('OpenDyslexic', 'OpenDyslexic'),
+    FontOption('Atkinson Hyperlegible', 'Atkinson Hyperlegible'),
   ];
 }
