@@ -91,3 +91,31 @@ final readingPlanDayProvider =
       if (rows.isEmpty) return null;
       return rows.first.data;
     });
+
+final prayerRequestsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  final db = ref.watch(appDatabaseProvider);
+  final rows = await db
+      .customSelect('SELECT * FROM prayer_requests ORDER BY created_at DESC')
+      .get();
+  return rows.map((r) => r.data).toList();
+});
+
+final hasPrayedProvider =
+    FutureProvider.family<bool, ({int requestId, String userName})>((
+      ref,
+      params,
+    ) async {
+      final db = ref.watch(appDatabaseProvider);
+      final result = await db
+          .customSelect(
+            'SELECT id FROM prayer_actions WHERE request_id = ? AND user_name = ?',
+            variables: [
+              Variable.withInt(params.requestId),
+              Variable.withString(params.userName),
+            ],
+          )
+          .get();
+      return result.isNotEmpty;
+    });

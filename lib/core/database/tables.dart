@@ -89,3 +89,19 @@ class ReadingProgress extends Table {
   BoolColumn get completed => boolean().withDefault(const Constant(false))();
   DateTimeColumn get completedAt => dateTime().nullable()();
 }
+
+class PrayerRequests extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get authorName => text()();
+  TextColumn get content => text()();
+  BoolColumn get isAnonymous => boolean().withDefault(const Constant(false))();
+  IntColumn get prayerCount => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class PrayerActions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get requestId => integer().references(PrayerRequests, #id)();
+  TextColumn get userName => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}

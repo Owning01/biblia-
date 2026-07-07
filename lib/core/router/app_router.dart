@@ -9,6 +9,7 @@ import '../../presentation/screens/bookmarks/bookmarks_screen.dart';
 import '../../presentation/screens/notes/notes_screen.dart';
 import '../../presentation/screens/highlights/highlights_screen.dart';
 import '../../presentation/screens/reading_plan/reading_plan_screen.dart';
+import '../../presentation/screens/community/community_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -47,6 +48,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => NoTransitionPage(
               key: state.pageKey,
               child: const ReadingPlanScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/community',
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const CommunityScreen(),
             ),
           ),
         ],
@@ -123,6 +131,11 @@ class HomeShell extends StatelessWidget {
             selectedIcon: Icon(Icons.calendar_month),
             label: 'Plan',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: 'Comunidad',
+          ),
         ],
       ),
     );
@@ -133,6 +146,7 @@ class HomeShell extends StatelessWidget {
     if (location.startsWith('/search')) return 1;
     if (location.startsWith('/bookmarks')) return 2;
     if (location.startsWith('/reading-plan')) return 3;
+    if (location.startsWith('/community')) return 4;
     return 0;
   }
 
@@ -146,6 +160,8 @@ class HomeShell extends StatelessWidget {
         context.go('/bookmarks');
       case 3:
         context.go('/reading-plan');
+      case 4:
+        context.go('/community');
     }
   }
 }

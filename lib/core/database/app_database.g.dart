@@ -3779,6 +3779,720 @@ class ReadingProgressCompanion extends UpdateCompanion<ReadingProgressData> {
   }
 }
 
+class $PrayerRequestsTable extends PrayerRequests
+    with TableInfo<$PrayerRequestsTable, PrayerRequest> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PrayerRequestsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _authorNameMeta = const VerificationMeta(
+    'authorName',
+  );
+  @override
+  late final GeneratedColumn<String> authorName = GeneratedColumn<String>(
+    'author_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isAnonymousMeta = const VerificationMeta(
+    'isAnonymous',
+  );
+  @override
+  late final GeneratedColumn<bool> isAnonymous = GeneratedColumn<bool>(
+    'is_anonymous',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_anonymous" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _prayerCountMeta = const VerificationMeta(
+    'prayerCount',
+  );
+  @override
+  late final GeneratedColumn<int> prayerCount = GeneratedColumn<int>(
+    'prayer_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    authorName,
+    content,
+    isAnonymous,
+    prayerCount,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'prayer_requests';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PrayerRequest> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('author_name')) {
+      context.handle(
+        _authorNameMeta,
+        authorName.isAcceptableOrUnknown(data['author_name']!, _authorNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_authorNameMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('is_anonymous')) {
+      context.handle(
+        _isAnonymousMeta,
+        isAnonymous.isAcceptableOrUnknown(
+          data['is_anonymous']!,
+          _isAnonymousMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prayer_count')) {
+      context.handle(
+        _prayerCountMeta,
+        prayerCount.isAcceptableOrUnknown(
+          data['prayer_count']!,
+          _prayerCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PrayerRequest map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PrayerRequest(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      authorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}author_name'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      isAnonymous: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_anonymous'],
+      )!,
+      prayerCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prayer_count'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PrayerRequestsTable createAlias(String alias) {
+    return $PrayerRequestsTable(attachedDatabase, alias);
+  }
+}
+
+class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
+  final int id;
+  final String authorName;
+  final String content;
+  final bool isAnonymous;
+  final int prayerCount;
+  final DateTime createdAt;
+  const PrayerRequest({
+    required this.id,
+    required this.authorName,
+    required this.content,
+    required this.isAnonymous,
+    required this.prayerCount,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['author_name'] = Variable<String>(authorName);
+    map['content'] = Variable<String>(content);
+    map['is_anonymous'] = Variable<bool>(isAnonymous);
+    map['prayer_count'] = Variable<int>(prayerCount);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PrayerRequestsCompanion toCompanion(bool nullToAbsent) {
+    return PrayerRequestsCompanion(
+      id: Value(id),
+      authorName: Value(authorName),
+      content: Value(content),
+      isAnonymous: Value(isAnonymous),
+      prayerCount: Value(prayerCount),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PrayerRequest.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PrayerRequest(
+      id: serializer.fromJson<int>(json['id']),
+      authorName: serializer.fromJson<String>(json['authorName']),
+      content: serializer.fromJson<String>(json['content']),
+      isAnonymous: serializer.fromJson<bool>(json['isAnonymous']),
+      prayerCount: serializer.fromJson<int>(json['prayerCount']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'authorName': serializer.toJson<String>(authorName),
+      'content': serializer.toJson<String>(content),
+      'isAnonymous': serializer.toJson<bool>(isAnonymous),
+      'prayerCount': serializer.toJson<int>(prayerCount),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PrayerRequest copyWith({
+    int? id,
+    String? authorName,
+    String? content,
+    bool? isAnonymous,
+    int? prayerCount,
+    DateTime? createdAt,
+  }) => PrayerRequest(
+    id: id ?? this.id,
+    authorName: authorName ?? this.authorName,
+    content: content ?? this.content,
+    isAnonymous: isAnonymous ?? this.isAnonymous,
+    prayerCount: prayerCount ?? this.prayerCount,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PrayerRequest copyWithCompanion(PrayerRequestsCompanion data) {
+    return PrayerRequest(
+      id: data.id.present ? data.id.value : this.id,
+      authorName: data.authorName.present
+          ? data.authorName.value
+          : this.authorName,
+      content: data.content.present ? data.content.value : this.content,
+      isAnonymous: data.isAnonymous.present
+          ? data.isAnonymous.value
+          : this.isAnonymous,
+      prayerCount: data.prayerCount.present
+          ? data.prayerCount.value
+          : this.prayerCount,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrayerRequest(')
+          ..write('id: $id, ')
+          ..write('authorName: $authorName, ')
+          ..write('content: $content, ')
+          ..write('isAnonymous: $isAnonymous, ')
+          ..write('prayerCount: $prayerCount, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, authorName, content, isAnonymous, prayerCount, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PrayerRequest &&
+          other.id == this.id &&
+          other.authorName == this.authorName &&
+          other.content == this.content &&
+          other.isAnonymous == this.isAnonymous &&
+          other.prayerCount == this.prayerCount &&
+          other.createdAt == this.createdAt);
+}
+
+class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
+  final Value<int> id;
+  final Value<String> authorName;
+  final Value<String> content;
+  final Value<bool> isAnonymous;
+  final Value<int> prayerCount;
+  final Value<DateTime> createdAt;
+  const PrayerRequestsCompanion({
+    this.id = const Value.absent(),
+    this.authorName = const Value.absent(),
+    this.content = const Value.absent(),
+    this.isAnonymous = const Value.absent(),
+    this.prayerCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PrayerRequestsCompanion.insert({
+    this.id = const Value.absent(),
+    required String authorName,
+    required String content,
+    this.isAnonymous = const Value.absent(),
+    this.prayerCount = const Value.absent(),
+    required DateTime createdAt,
+  }) : authorName = Value(authorName),
+       content = Value(content),
+       createdAt = Value(createdAt);
+  static Insertable<PrayerRequest> custom({
+    Expression<int>? id,
+    Expression<String>? authorName,
+    Expression<String>? content,
+    Expression<bool>? isAnonymous,
+    Expression<int>? prayerCount,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (authorName != null) 'author_name': authorName,
+      if (content != null) 'content': content,
+      if (isAnonymous != null) 'is_anonymous': isAnonymous,
+      if (prayerCount != null) 'prayer_count': prayerCount,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PrayerRequestsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? authorName,
+    Value<String>? content,
+    Value<bool>? isAnonymous,
+    Value<int>? prayerCount,
+    Value<DateTime>? createdAt,
+  }) {
+    return PrayerRequestsCompanion(
+      id: id ?? this.id,
+      authorName: authorName ?? this.authorName,
+      content: content ?? this.content,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
+      prayerCount: prayerCount ?? this.prayerCount,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (authorName.present) {
+      map['author_name'] = Variable<String>(authorName.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (isAnonymous.present) {
+      map['is_anonymous'] = Variable<bool>(isAnonymous.value);
+    }
+    if (prayerCount.present) {
+      map['prayer_count'] = Variable<int>(prayerCount.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrayerRequestsCompanion(')
+          ..write('id: $id, ')
+          ..write('authorName: $authorName, ')
+          ..write('content: $content, ')
+          ..write('isAnonymous: $isAnonymous, ')
+          ..write('prayerCount: $prayerCount, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PrayerActionsTable extends PrayerActions
+    with TableInfo<$PrayerActionsTable, PrayerAction> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PrayerActionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _requestIdMeta = const VerificationMeta(
+    'requestId',
+  );
+  @override
+  late final GeneratedColumn<int> requestId = GeneratedColumn<int>(
+    'request_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES prayer_requests (id)',
+    ),
+  );
+  static const VerificationMeta _userNameMeta = const VerificationMeta(
+    'userName',
+  );
+  @override
+  late final GeneratedColumn<String> userName = GeneratedColumn<String>(
+    'user_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, requestId, userName, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'prayer_actions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PrayerAction> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('request_id')) {
+      context.handle(
+        _requestIdMeta,
+        requestId.isAcceptableOrUnknown(data['request_id']!, _requestIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_requestIdMeta);
+    }
+    if (data.containsKey('user_name')) {
+      context.handle(
+        _userNameMeta,
+        userName.isAcceptableOrUnknown(data['user_name']!, _userNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userNameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PrayerAction map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PrayerAction(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      requestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}request_id'],
+      )!,
+      userName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PrayerActionsTable createAlias(String alias) {
+    return $PrayerActionsTable(attachedDatabase, alias);
+  }
+}
+
+class PrayerAction extends DataClass implements Insertable<PrayerAction> {
+  final int id;
+  final int requestId;
+  final String userName;
+  final DateTime createdAt;
+  const PrayerAction({
+    required this.id,
+    required this.requestId,
+    required this.userName,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['request_id'] = Variable<int>(requestId);
+    map['user_name'] = Variable<String>(userName);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PrayerActionsCompanion toCompanion(bool nullToAbsent) {
+    return PrayerActionsCompanion(
+      id: Value(id),
+      requestId: Value(requestId),
+      userName: Value(userName),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PrayerAction.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PrayerAction(
+      id: serializer.fromJson<int>(json['id']),
+      requestId: serializer.fromJson<int>(json['requestId']),
+      userName: serializer.fromJson<String>(json['userName']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'requestId': serializer.toJson<int>(requestId),
+      'userName': serializer.toJson<String>(userName),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PrayerAction copyWith({
+    int? id,
+    int? requestId,
+    String? userName,
+    DateTime? createdAt,
+  }) => PrayerAction(
+    id: id ?? this.id,
+    requestId: requestId ?? this.requestId,
+    userName: userName ?? this.userName,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PrayerAction copyWithCompanion(PrayerActionsCompanion data) {
+    return PrayerAction(
+      id: data.id.present ? data.id.value : this.id,
+      requestId: data.requestId.present ? data.requestId.value : this.requestId,
+      userName: data.userName.present ? data.userName.value : this.userName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrayerAction(')
+          ..write('id: $id, ')
+          ..write('requestId: $requestId, ')
+          ..write('userName: $userName, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, requestId, userName, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PrayerAction &&
+          other.id == this.id &&
+          other.requestId == this.requestId &&
+          other.userName == this.userName &&
+          other.createdAt == this.createdAt);
+}
+
+class PrayerActionsCompanion extends UpdateCompanion<PrayerAction> {
+  final Value<int> id;
+  final Value<int> requestId;
+  final Value<String> userName;
+  final Value<DateTime> createdAt;
+  const PrayerActionsCompanion({
+    this.id = const Value.absent(),
+    this.requestId = const Value.absent(),
+    this.userName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PrayerActionsCompanion.insert({
+    this.id = const Value.absent(),
+    required int requestId,
+    required String userName,
+    required DateTime createdAt,
+  }) : requestId = Value(requestId),
+       userName = Value(userName),
+       createdAt = Value(createdAt);
+  static Insertable<PrayerAction> custom({
+    Expression<int>? id,
+    Expression<int>? requestId,
+    Expression<String>? userName,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (requestId != null) 'request_id': requestId,
+      if (userName != null) 'user_name': userName,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PrayerActionsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? requestId,
+    Value<String>? userName,
+    Value<DateTime>? createdAt,
+  }) {
+    return PrayerActionsCompanion(
+      id: id ?? this.id,
+      requestId: requestId ?? this.requestId,
+      userName: userName ?? this.userName,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (requestId.present) {
+      map['request_id'] = Variable<int>(requestId.value);
+    }
+    if (userName.present) {
+      map['user_name'] = Variable<String>(userName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrayerActionsCompanion(')
+          ..write('id: $id, ')
+          ..write('requestId: $requestId, ')
+          ..write('userName: $userName, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3795,6 +4509,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ReadingProgressTable readingProgress = $ReadingProgressTable(
     this,
   );
+  late final $PrayerRequestsTable prayerRequests = $PrayerRequestsTable(this);
+  late final $PrayerActionsTable prayerActions = $PrayerActionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3809,6 +4525,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     readingPlans,
     readingPlanDays,
     readingProgress,
+    prayerRequests,
+    prayerActions,
   ];
 }
 
@@ -6665,6 +7383,635 @@ typedef $$ReadingProgressTableProcessedTableManager =
       ReadingProgressData,
       PrefetchHooks Function({bool planId})
     >;
+typedef $$PrayerRequestsTableCreateCompanionBuilder =
+    PrayerRequestsCompanion Function({
+      Value<int> id,
+      required String authorName,
+      required String content,
+      Value<bool> isAnonymous,
+      Value<int> prayerCount,
+      required DateTime createdAt,
+    });
+typedef $$PrayerRequestsTableUpdateCompanionBuilder =
+    PrayerRequestsCompanion Function({
+      Value<int> id,
+      Value<String> authorName,
+      Value<String> content,
+      Value<bool> isAnonymous,
+      Value<int> prayerCount,
+      Value<DateTime> createdAt,
+    });
+
+final class $$PrayerRequestsTableReferences
+    extends BaseReferences<_$AppDatabase, $PrayerRequestsTable, PrayerRequest> {
+  $$PrayerRequestsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$PrayerActionsTable, List<PrayerAction>>
+  _prayerActionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.prayerActions,
+    aliasName: $_aliasNameGenerator(
+      db.prayerRequests.id,
+      db.prayerActions.requestId,
+    ),
+  );
+
+  $$PrayerActionsTableProcessedTableManager get prayerActionsRefs {
+    final manager = $$PrayerActionsTableTableManager(
+      $_db,
+      $_db.prayerActions,
+    ).filter((f) => f.requestId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_prayerActionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PrayerRequestsTableFilterComposer
+    extends Composer<_$AppDatabase, $PrayerRequestsTable> {
+  $$PrayerRequestsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authorName => $composableBuilder(
+    column: $table.authorName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prayerCount => $composableBuilder(
+    column: $table.prayerCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> prayerActionsRefs(
+    Expression<bool> Function($$PrayerActionsTableFilterComposer f) f,
+  ) {
+    final $$PrayerActionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.prayerActions,
+      getReferencedColumn: (t) => t.requestId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrayerActionsTableFilterComposer(
+            $db: $db,
+            $table: $db.prayerActions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PrayerRequestsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PrayerRequestsTable> {
+  $$PrayerRequestsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authorName => $composableBuilder(
+    column: $table.authorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prayerCount => $composableBuilder(
+    column: $table.prayerCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PrayerRequestsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PrayerRequestsTable> {
+  $$PrayerRequestsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get authorName => $composableBuilder(
+    column: $table.authorName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAnonymous => $composableBuilder(
+    column: $table.isAnonymous,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prayerCount => $composableBuilder(
+    column: $table.prayerCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> prayerActionsRefs<T extends Object>(
+    Expression<T> Function($$PrayerActionsTableAnnotationComposer a) f,
+  ) {
+    final $$PrayerActionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.prayerActions,
+      getReferencedColumn: (t) => t.requestId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrayerActionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.prayerActions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PrayerRequestsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PrayerRequestsTable,
+          PrayerRequest,
+          $$PrayerRequestsTableFilterComposer,
+          $$PrayerRequestsTableOrderingComposer,
+          $$PrayerRequestsTableAnnotationComposer,
+          $$PrayerRequestsTableCreateCompanionBuilder,
+          $$PrayerRequestsTableUpdateCompanionBuilder,
+          (PrayerRequest, $$PrayerRequestsTableReferences),
+          PrayerRequest,
+          PrefetchHooks Function({bool prayerActionsRefs})
+        > {
+  $$PrayerRequestsTableTableManager(
+    _$AppDatabase db,
+    $PrayerRequestsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PrayerRequestsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PrayerRequestsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PrayerRequestsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> authorName = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<bool> isAnonymous = const Value.absent(),
+                Value<int> prayerCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PrayerRequestsCompanion(
+                id: id,
+                authorName: authorName,
+                content: content,
+                isAnonymous: isAnonymous,
+                prayerCount: prayerCount,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String authorName,
+                required String content,
+                Value<bool> isAnonymous = const Value.absent(),
+                Value<int> prayerCount = const Value.absent(),
+                required DateTime createdAt,
+              }) => PrayerRequestsCompanion.insert(
+                id: id,
+                authorName: authorName,
+                content: content,
+                isAnonymous: isAnonymous,
+                prayerCount: prayerCount,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PrayerRequestsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({prayerActionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (prayerActionsRefs) db.prayerActions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (prayerActionsRefs)
+                    await $_getPrefetchedData<
+                      PrayerRequest,
+                      $PrayerRequestsTable,
+                      PrayerAction
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PrayerRequestsTableReferences
+                          ._prayerActionsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PrayerRequestsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).prayerActionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.requestId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PrayerRequestsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PrayerRequestsTable,
+      PrayerRequest,
+      $$PrayerRequestsTableFilterComposer,
+      $$PrayerRequestsTableOrderingComposer,
+      $$PrayerRequestsTableAnnotationComposer,
+      $$PrayerRequestsTableCreateCompanionBuilder,
+      $$PrayerRequestsTableUpdateCompanionBuilder,
+      (PrayerRequest, $$PrayerRequestsTableReferences),
+      PrayerRequest,
+      PrefetchHooks Function({bool prayerActionsRefs})
+    >;
+typedef $$PrayerActionsTableCreateCompanionBuilder =
+    PrayerActionsCompanion Function({
+      Value<int> id,
+      required int requestId,
+      required String userName,
+      required DateTime createdAt,
+    });
+typedef $$PrayerActionsTableUpdateCompanionBuilder =
+    PrayerActionsCompanion Function({
+      Value<int> id,
+      Value<int> requestId,
+      Value<String> userName,
+      Value<DateTime> createdAt,
+    });
+
+final class $$PrayerActionsTableReferences
+    extends BaseReferences<_$AppDatabase, $PrayerActionsTable, PrayerAction> {
+  $$PrayerActionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PrayerRequestsTable _requestIdTable(_$AppDatabase db) =>
+      db.prayerRequests.createAlias(
+        $_aliasNameGenerator(db.prayerActions.requestId, db.prayerRequests.id),
+      );
+
+  $$PrayerRequestsTableProcessedTableManager get requestId {
+    final $_column = $_itemColumn<int>('request_id')!;
+
+    final manager = $$PrayerRequestsTableTableManager(
+      $_db,
+      $_db.prayerRequests,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_requestIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PrayerActionsTableFilterComposer
+    extends Composer<_$AppDatabase, $PrayerActionsTable> {
+  $$PrayerActionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userName => $composableBuilder(
+    column: $table.userName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PrayerRequestsTableFilterComposer get requestId {
+    final $$PrayerRequestsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.requestId,
+      referencedTable: $db.prayerRequests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrayerRequestsTableFilterComposer(
+            $db: $db,
+            $table: $db.prayerRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PrayerActionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PrayerActionsTable> {
+  $$PrayerActionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userName => $composableBuilder(
+    column: $table.userName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PrayerRequestsTableOrderingComposer get requestId {
+    final $$PrayerRequestsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.requestId,
+      referencedTable: $db.prayerRequests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrayerRequestsTableOrderingComposer(
+            $db: $db,
+            $table: $db.prayerRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PrayerActionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PrayerActionsTable> {
+  $$PrayerActionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userName =>
+      $composableBuilder(column: $table.userName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$PrayerRequestsTableAnnotationComposer get requestId {
+    final $$PrayerRequestsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.requestId,
+      referencedTable: $db.prayerRequests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrayerRequestsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.prayerRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PrayerActionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PrayerActionsTable,
+          PrayerAction,
+          $$PrayerActionsTableFilterComposer,
+          $$PrayerActionsTableOrderingComposer,
+          $$PrayerActionsTableAnnotationComposer,
+          $$PrayerActionsTableCreateCompanionBuilder,
+          $$PrayerActionsTableUpdateCompanionBuilder,
+          (PrayerAction, $$PrayerActionsTableReferences),
+          PrayerAction,
+          PrefetchHooks Function({bool requestId})
+        > {
+  $$PrayerActionsTableTableManager(_$AppDatabase db, $PrayerActionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PrayerActionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PrayerActionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PrayerActionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> requestId = const Value.absent(),
+                Value<String> userName = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PrayerActionsCompanion(
+                id: id,
+                requestId: requestId,
+                userName: userName,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int requestId,
+                required String userName,
+                required DateTime createdAt,
+              }) => PrayerActionsCompanion.insert(
+                id: id,
+                requestId: requestId,
+                userName: userName,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PrayerActionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({requestId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (requestId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.requestId,
+                                referencedTable: $$PrayerActionsTableReferences
+                                    ._requestIdTable(db),
+                                referencedColumn: $$PrayerActionsTableReferences
+                                    ._requestIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PrayerActionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PrayerActionsTable,
+      PrayerAction,
+      $$PrayerActionsTableFilterComposer,
+      $$PrayerActionsTableOrderingComposer,
+      $$PrayerActionsTableAnnotationComposer,
+      $$PrayerActionsTableCreateCompanionBuilder,
+      $$PrayerActionsTableUpdateCompanionBuilder,
+      (PrayerAction, $$PrayerActionsTableReferences),
+      PrayerAction,
+      PrefetchHooks Function({bool requestId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6687,4 +8034,8 @@ class $AppDatabaseManager {
       $$ReadingPlanDaysTableTableManager(_db, _db.readingPlanDays);
   $$ReadingProgressTableTableManager get readingProgress =>
       $$ReadingProgressTableTableManager(_db, _db.readingProgress);
+  $$PrayerRequestsTableTableManager get prayerRequests =>
+      $$PrayerRequestsTableTableManager(_db, _db.prayerRequests);
+  $$PrayerActionsTableTableManager get prayerActions =>
+      $$PrayerActionsTableTableManager(_db, _db.prayerActions);
 }

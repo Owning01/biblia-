@@ -175,3 +175,26 @@ class VerseSpacingNotifier extends StateNotifier<double> {
     prefs.setDouble('verse_spacing', spacing);
   }
 }
+
+final userNameProvider = StateNotifierProvider<UserNameNotifier, String>((ref) {
+  return UserNameNotifier(ref);
+});
+
+class UserNameNotifier extends StateNotifier<String> {
+  final Ref _ref;
+
+  UserNameNotifier(this._ref) : super('') {
+    _load();
+  }
+
+  void _load() {
+    final prefs = _ref.read(sharedPrefsProvider);
+    state = prefs.getString('user_name') ?? '';
+  }
+
+  void setName(String name) {
+    state = name;
+    final prefs = _ref.read(sharedPrefsProvider);
+    prefs.setString('user_name', name);
+  }
+}

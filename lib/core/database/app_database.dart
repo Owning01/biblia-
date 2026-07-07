@@ -43,6 +43,8 @@ QueryExecutor _createExecutor() {
     ReadingPlans,
     ReadingPlanDays,
     ReadingProgress,
+    PrayerRequests,
+    PrayerActions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -63,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -71,6 +73,12 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
       await _seedAll();
       await _createFtsIndex();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(prayerRequests);
+        await m.createTable(prayerActions);
+      }
     },
   );
 

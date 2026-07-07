@@ -135,7 +135,8 @@ class FontOption {
     FontOption('Merriweather', 'Merriweather'),
     FontOption('Playfair Display', 'Playfair Display'),
     FontOption('JetBrains Mono', 'JetBrains Mono'),
-    FontOption('OpenDyslexic', 'OpenDyslexic'),
+    FontOption('Crimson Text', 'Crimson Text'),
     FontOption('Atkinson Hyperlegible', 'Atkinson Hyperlegible'),
+    FontOption('Source Serif 4', 'Source Serif 4'),
   ];
 }
