@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/bible_metadata.dart';
 import '../../providers/bible_providers.dart';
+import '../../providers/extra_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -24,10 +25,14 @@ class HomeScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         children: [
+          const _DailyVerseCard(),
+          const SizedBox(height: 16),
+          const _ReadingStatsCard(),
           if (lastRead != null) ...[
-            _ContinueReadingCard(lastRead: lastRead),
             const SizedBox(height: 28),
+            _ContinueReadingCard(lastRead: lastRead),
           ],
+          const SizedBox(height: 28),
           _SectionHeader(title: 'Antiguo Testamento'),
           const SizedBox(height: 12),
           _BookGrid(testament: 'old'),
@@ -37,6 +42,197 @@ class HomeScreen extends ConsumerWidget {
           _BookGrid(testament: 'new'),
         ],
       ),
+    );
+  }
+}
+
+class _DailyVerseCard extends ConsumerWidget {
+  const _DailyVerseCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final dailyAsync = ref.watch(dailyVerseProvider);
+
+    return dailyAsync.when(
+      data: (verse) {
+        if (verse == null) return const SizedBox.shrink();
+        final book = booksById[verse.bookId];
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => context.push(
+                '/read/${verse.versionId}/${verse.bookId}/${verse.chapter}',
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 18,
+                          color: theme.colorScheme.onPrimary.withValues(
+                            alpha: 0.9,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'VERSÍCULO DEL DÍA',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onPrimary.withValues(
+                              alpha: 0.9,
+                            ),
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '"${verse.text}"',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontStyle: FontStyle.italic,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${book?.name ?? ''} ${verse.chapter}:${verse.verse}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary.withValues(
+                          alpha: 0.85,
+                        ),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _ReadingStatsCard extends ConsumerWidget {
+  const _ReadingStatsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final streakAsync = ref.watch(readingStreakProvider);
+    final todayAsync = ref.watch(versesReadTodayProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: streakAsync.when(
+                data: (streak) => _StatItem(
+                  icon: Icons.local_fire_department_rounded,
+                  value: '$streak',
+                  label: 'días seguidos',
+                ),
+                loading: () => const _StatItem(
+                  icon: Icons.local_fire_department_rounded,
+                  value: '—',
+                  label: 'días seguidos',
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 36,
+              color: theme.colorScheme.outline.withValues(alpha: 0.15),
+            ),
+            Expanded(
+              child: todayAsync.when(
+                data: (today) => _StatItem(
+                  icon: Icons.menu_book_rounded,
+                  value: '$today',
+                  label: 'versículos hoy',
+                ),
+                loading: () => const _StatItem(
+                  icon: Icons.menu_book_rounded,
+                  value: '—',
+                  label: 'versículos hoy',
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  const _StatItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Icon(icon, color: theme.colorScheme.primary, size: 22),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
     );
   }
 }

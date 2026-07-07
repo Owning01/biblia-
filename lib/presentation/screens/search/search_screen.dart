@@ -6,6 +6,7 @@ import '../../../core/utils/verse_reference.dart';
 import '../../../domain/entities/verse.dart';
 import '../../providers/search_providers.dart';
 import '../../providers/settings_providers.dart';
+import '../../providers/extra_providers.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -57,6 +58,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               onChanged: (value) {
                 ref.read(searchProvider.notifier).search(value);
               },
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  SearchHistoryActions(ref).add(value.trim());
+                }
+              },
               textInputAction: TextInputAction.search,
             ),
           ),
@@ -68,24 +74,71 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildResults(SearchState state, ThemeData theme) {
     if (state.query.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Busca versiculos, libros o referencias',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      final historyAsync = ref.watch(searchHistoryProvider);
+      return historyAsync.when(
+        data: (history) {
+          if (history.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search,
+                    size: 64,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Busca versiculos, libros o referencias',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Búsquedas recientes',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => SearchHistoryActions(ref).clear(),
+                    child: const Text('Borrar'),
+                  ),
+                ],
+              ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: history
+                    .map(
+                      (q) => ActionChip(
+                        avatar: const Icon(Icons.history, size: 16),
+                        label: Text(q),
+                        onPressed: () {
+                          _searchController.text = q;
+                          ref.read(searchProvider.notifier).search(q);
+                        },
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
       );
     }
 

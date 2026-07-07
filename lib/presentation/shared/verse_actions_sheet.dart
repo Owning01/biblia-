@@ -9,10 +9,11 @@ class VerseActionsSheet extends StatelessWidget {
   final bool isBookmarked;
   final String? highlightColor;
   final void Function()? onBookmark;
-  final void Function(String color)? onHighlight;
+  final void Function(String color, String? category)? onHighlight;
   final void Function()? onNote;
   final void Function()? onShare;
   final void Function()? onShareImage;
+  final void Function()? onCompare;
 
   const VerseActionsSheet({
     super.key,
@@ -24,6 +25,7 @@ class VerseActionsSheet extends StatelessWidget {
     this.onNote,
     this.onShare,
     this.onShareImage,
+    this.onCompare,
   });
 
   static const highlightColors = [
@@ -121,13 +123,22 @@ class VerseActionsSheet extends StatelessWidget {
                       label: 'Compartir',
                       onTap: () => _showShareOptions(context),
                     ),
+                    if (onCompare != null)
+                      _ActionButton(
+                        icon: Icons.compare_arrows_outlined,
+                        label: 'Comparar',
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          onCompare?.call();
+                        },
+                      ),
                   ],
                 ),
                 if (highlightColor != null) ...[
                   const SizedBox(height: 16),
                   Center(
                     child: TextButton.icon(
-                      onPressed: () => onHighlight?.call(''),
+                      onPressed: () => onHighlight?.call('', null),
                       icon: const Icon(Icons.close, size: 18),
                       label: const Text('Quitar subrayado'),
                     ),
@@ -143,8 +154,10 @@ class VerseActionsSheet extends StatelessWidget {
 
   void _showColorPicker(BuildContext context) {
     final theme = Theme.of(context);
+    final categoryController = TextEditingController();
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: BackdropFilter(
@@ -159,7 +172,12 @@ class VerseActionsSheet extends StatelessWidget {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.fromLTRB(
+                24,
+                24,
+                24,
+                24 + MediaQuery.of(ctx).viewInsets.bottom,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -187,7 +205,12 @@ class VerseActionsSheet extends StatelessWidget {
                         onTap: () {
                           HapticFeedback.selectionClick();
                           Navigator.pop(ctx);
-                          onHighlight?.call(color);
+                          onHighlight?.call(
+                            color,
+                            categoryController.text.trim().isEmpty
+                                ? null
+                                : categoryController.text.trim(),
+                          );
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
@@ -229,6 +252,15 @@ class VerseActionsSheet extends StatelessWidget {
                         ),
                       );
                     }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: categoryController,
+                    decoration: const InputDecoration(
+                      hintText: 'Categoría (opcional, ej. "Para meditar")',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.category_outlined),
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],

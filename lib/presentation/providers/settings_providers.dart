@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/theme/app_theme.dart';
 
 final sharedPrefsProvider = Provider<SharedPreferences>((ref) {
@@ -119,29 +121,7 @@ class FontFamilyNotifier extends StateNotifier<String> {
   }
 }
 
-final activeVersionProvider =
-    StateNotifierProvider<ActiveVersionNotifier, String>((ref) {
-      return ActiveVersionNotifier(ref);
-    });
-
-class ActiveVersionNotifier extends StateNotifier<String> {
-  final Ref _ref;
-
-  ActiveVersionNotifier(this._ref) : super('rv1960') {
-    _load();
-  }
-
-  void _load() {
-    final prefs = _ref.read(sharedPrefsProvider);
-    state = prefs.getString('active_version') ?? 'rv1960';
-  }
-
-  void setVersion(String versionId) {
-    state = versionId;
-    final prefs = _ref.read(sharedPrefsProvider);
-    prefs.setString('active_version', versionId);
-  }
-}
+final activeVersionProvider = Provider<String>((ref) => 'rv1960');
 
 final readingMarginProvider =
     StateNotifierProvider<ReadingMarginNotifier, double>((ref) {
@@ -211,5 +191,117 @@ class UserNameNotifier extends StateNotifier<String> {
     state = name;
     final prefs = _ref.read(sharedPrefsProvider);
     prefs.setString('user_name', name);
+  }
+}
+
+class NotificationSettings {
+  final bool dailyVerseEnabled;
+  final bool reminderEnabled;
+  final TimeOfDay dailyVerseTime;
+  final TimeOfDay reminderTime;
+
+  const NotificationSettings({
+    this.dailyVerseEnabled = false,
+    this.reminderEnabled = false,
+    this.dailyVerseTime = const TimeOfDay(hour: 8, minute: 0),
+    this.reminderTime = const TimeOfDay(hour: 20, minute: 0),
+  });
+
+  NotificationSettings copyWith({
+    bool? dailyVerseEnabled,
+    bool? reminderEnabled,
+    TimeOfDay? dailyVerseTime,
+    TimeOfDay? reminderTime,
+  }) {
+    return NotificationSettings(
+      dailyVerseEnabled: dailyVerseEnabled ?? this.dailyVerseEnabled,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      dailyVerseTime: dailyVerseTime ?? this.dailyVerseTime,
+      reminderTime: reminderTime ?? this.reminderTime,
+    );
+  }
+}
+
+final notificationSettingsProvider =
+    StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>((
+      ref,
+    ) {
+      return NotificationSettingsNotifier(ref);
+    });
+
+class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
+  final Ref _ref;
+
+  NotificationSettingsNotifier(this._ref)
+    : super(const NotificationSettings()) {
+    _load();
+  }
+
+  void _load() {
+    final prefs = _ref.read(sharedPrefsProvider);
+    state = NotificationSettings(
+      dailyVerseEnabled: prefs.getBool('daily_verse_enabled') ?? false,
+      reminderEnabled: prefs.getBool('reminder_enabled') ?? false,
+      dailyVerseTime: _parse(prefs.getString('daily_verse_time'), 8, 0),
+      reminderTime: _parse(prefs.getString('reminder_time'), 20, 0),
+    );
+  }
+
+  TimeOfDay _parse(String? value, int h, int m) {
+    if (value == null) return TimeOfDay(hour: h, minute: m);
+    final parts = value.split(':');
+    return TimeOfDay(
+      hour: int.tryParse(parts[0]) ?? h,
+      minute: int.tryParse(parts[1]) ?? m,
+    );
+  }
+
+  Future<void> _persist() async {
+    final prefs = _ref.read(sharedPrefsProvider);
+    await prefs.setBool('daily_verse_enabled', state.dailyVerseEnabled);
+    await prefs.setBool('reminder_enabled', state.reminderEnabled);
+    await prefs.setString(
+      'daily_verse_time',
+      '${state.dailyVerseTime.hour}:${state.dailyVerseTime.minute}',
+    );
+    await prefs.setString(
+      'reminder_time',
+      '${state.reminderTime.hour}:${state.reminderTime.minute}',
+    );
+  }
+
+  void setDailyVerse(bool value) {
+    state = state.copyWith(dailyVerseEnabled: value);
+    _persist();
+    _apply();
+  }
+
+  void setReminder(bool value) {
+    state = state.copyWith(reminderEnabled: value);
+    _persist();
+    _apply();
+  }
+
+  void setDailyVerseTime(TimeOfDay time) {
+    state = state.copyWith(dailyVerseTime: time);
+    _persist();
+    _apply();
+  }
+
+  void setReminderTime(TimeOfDay time) {
+    state = state.copyWith(reminderTime: time);
+    _persist();
+    _apply();
+  }
+
+  void _apply() {
+    final service = _ref.read(notificationServiceProvider);
+    service.cancelAll();
+    if (state.dailyVerseEnabled) {
+      service.scheduleDailyVerse(state.dailyVerseTime);
+    }
+    if (state.reminderEnabled) {
+      service.scheduleReadingReminder(state.reminderTime);
+    }
   }
 }

@@ -12,6 +12,7 @@ import '../../../domain/entities/verse.dart';
 import '../../providers/bible_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../providers/user_data_providers.dart';
+import '../../providers/extra_providers.dart';
 import '../../shared/reading_config_sheet.dart';
 import '../../shared/verse_actions_sheet.dart';
 import '../../shared/verse_tile.dart';
@@ -35,6 +36,7 @@ class BibleReaderScreen extends ConsumerStatefulWidget {
 class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
   late final PageController _pageController;
   late int _currentChapter;
+  final Set<(int, int)> _logged = {};
 
   @override
   void initState() {
@@ -59,6 +61,32 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
     ref
         .read(lastReadByBookProvider.notifier)
         .setLastChapter(widget.bookId, _currentChapter);
+    _logReading();
+  }
+
+  Future<void> _logReading() async {
+    final key = (widget.bookId, _currentChapter);
+    if (!_logged.add(key)) return;
+    final db = ref.read(appDatabaseProvider);
+    final count = await db
+        .customSelect(
+          'SELECT COUNT(*) as c FROM verses WHERE version_id = ? AND book_id = ? AND chapter = ?',
+          variables: [
+            Variable.withString(widget.versionId),
+            Variable.withInt(widget.bookId),
+            Variable.withInt(_currentChapter),
+          ],
+        )
+        .getSingle();
+    final verses = (count.data['c'] as int?) ?? 0;
+    if (verses > 0) {
+      await db.logReading(
+        widget.versionId,
+        widget.bookId,
+        _currentChapter,
+        verses,
+      );
+    }
   }
 
   @override
@@ -74,11 +102,6 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
       appBar: AppBar(
         title: Text('${book?.name ?? ''} $_currentChapter'),
         actions: [
-          _VersionSwitcher(
-            versionId: widget.versionId,
-            bookId: widget.bookId,
-            chapter: _currentChapter,
-          ),
           IconButton(
             icon: const Icon(Icons.notes_outlined),
             onPressed: () => context.push('/notes'),
@@ -169,10 +192,12 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
               isBookmarked: isBookmarked,
               highlightColor: existingColor,
               onBookmark: () => _toggleBookmark(v),
-              onHighlight: (color) => _toggleHighlight(v, color),
+              onHighlight: (color, category) =>
+                  _toggleHighlight(v, color, category),
               onNote: () => _addNote(v),
               onShare: () => _shareText(v),
               onShareImage: () => _shareImage(v),
+              onCompare: () => _showCompare(v),
             ),
           );
         });
@@ -214,7 +239,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
     if (context.mounted) Navigator.pop(context);
   }
 
-  void _toggleHighlight(Verse v, String color) async {
+  void _toggleHighlight(Verse v, String color, String? category) async {
     final db = ref.read(appDatabaseProvider);
     if (color.isEmpty) {
       await db.customInsert(
@@ -228,7 +253,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
       );
     } else {
       await db.customInsert(
-        'INSERT INTO highlights (version_id, book_id, chapter, verse_start, verse_end, color, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO highlights (version_id, book_id, chapter, verse_start, verse_end, color, category, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         variables: [
           Variable.withString(widget.versionId),
           Variable.withInt(widget.bookId),
@@ -236,6 +261,7 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
           Variable.withInt(v.verse),
           Variable.withInt(v.verse),
           Variable.withString(color),
+          Variable.withString(category ?? ''),
           Variable.withString(DateTime.now().toIso8601String()),
         ],
       );
@@ -247,19 +273,34 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
   void _addNote(Verse v) async {
     Navigator.pop(context);
     final controller = TextEditingController();
-    final result = await showDialog<String>(
+    final tagController = TextEditingController();
+    final result = await showDialog<(String, String)>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
           'Nota - ${booksById[widget.bookId]?.name ?? ''} $_currentChapter:${v.verse}',
         ),
-        content: TextField(
-          controller: controller,
-          maxLines: 5,
-          decoration: const InputDecoration(
-            hintText: 'Escribe tu nota...',
-            border: OutlineInputBorder(),
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                hintText: 'Escribe tu nota...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: tagController,
+              decoration: const InputDecoration(
+                hintText: 'Etiquetas (separadas por coma)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.tag),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -267,29 +308,37 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
+            onPressed: () =>
+                Navigator.pop(ctx, (controller.text, tagController.text)),
             child: const Text('Guardar'),
           ),
         ],
       ),
     );
 
-    if (result != null && result.isNotEmpty) {
+    if (result != null && result.$1.isNotEmpty) {
       final db = ref.read(appDatabaseProvider);
       final now = DateTime.now().toIso8601String();
-      await db.customInsert(
+      final id = await db.customInsert(
         'INSERT INTO notes (version_id, book_id, chapter, verse, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
         variables: [
           Variable.withString(widget.versionId),
           Variable.withInt(widget.bookId),
           Variable.withInt(_currentChapter),
           Variable.withInt(v.verse),
-          Variable.withString(result),
+          Variable.withString(result.$1),
           Variable.withString(now),
           Variable.withString(now),
         ],
       );
+      final tags = result.$2
+          .split(',')
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty)
+          .toList();
+      if (tags.isNotEmpty) await db.setNoteTags(id, tags);
       ref.invalidate(notesProvider);
+      ref.invalidate(allNoteTagsProvider);
     }
   }
 
@@ -299,6 +348,19 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
     final refText = '${book?.name ?? ''} $_currentChapter:${v.verse}';
     final text = '"${v.text}"\n\n- $refText (Biblia)';
     Share.share(text);
+  }
+
+  void _showCompare(Verse v) {
+    Navigator.pop(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _CompareSheet(
+        bookId: widget.bookId,
+        chapter: _currentChapter,
+        verse: v.verse,
+      ),
+    );
   }
 
   void _shareImage(Verse v) async {
@@ -327,6 +389,133 @@ class _BibleReaderScreenState extends ConsumerState<BibleReaderScreen> {
     await file.writeAsBytes(imageBytes);
 
     await Share.shareXFiles([XFile(filePath)]);
+  }
+}
+
+class _CompareSheet extends ConsumerStatefulWidget {
+  final int bookId;
+  final int chapter;
+  final int verse;
+
+  const _CompareSheet({
+    required this.bookId,
+    required this.chapter,
+    required this.verse,
+  });
+
+  @override
+  ConsumerState<_CompareSheet> createState() => _CompareSheetState();
+}
+
+class _CompareSheetState extends ConsumerState<_CompareSheet> {
+  late Future<List<QueryRow>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _fetch();
+  }
+
+  Future<List<QueryRow>> _fetch() {
+    final db = ref.read(appDatabaseProvider);
+    return db
+        .customSelect(
+          'SELECT v.content AS text, bv.name AS version_name FROM verses v '
+          'JOIN bible_versions bv ON bv.id = v.version_id '
+          'WHERE v.book_id = ? AND v.chapter = ? AND v.verse = ? '
+          'ORDER BY bv.id',
+          variables: [
+            Variable.withInt(widget.bookId),
+            Variable.withInt(widget.chapter),
+            Variable.withInt(widget.verse),
+          ],
+        )
+        .get();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final book = booksById[widget.bookId];
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (ctx, scroll) => FutureBuilder<List<QueryRow>>(
+        future: _future,
+        builder: (context, snap) {
+          return Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.3,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  '${book?.name ?? ''} ${widget.chapter}:${widget.verse}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    if (!snap.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final rows = snap.data!;
+                    if (rows.isEmpty) {
+                      return const Center(
+                        child: Text('No hay versiones disponibles'),
+                      );
+                    }
+                    return ListView.separated(
+                      controller: scroll,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: rows.length,
+                      separatorBuilder: (_, __) => const Divider(),
+                      itemBuilder: (context, i) {
+                        final r = rows[i];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              r.data['version_name'] as String,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              (r.data['text'] as String?) ?? '',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -468,34 +657,6 @@ class _ChapterNavigator extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _VersionSwitcher extends ConsumerWidget {
-  final String versionId;
-  final int bookId;
-  final int chapter;
-  const _VersionSwitcher({
-    required this.versionId,
-    required this.bookId,
-    required this.chapter,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.translate),
-      onSelected: (version) {
-        ref.read(activeVersionProvider.notifier).setVersion(version);
-        context.pushReplacement('/read/$version/$bookId/$chapter');
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(value: 'rv1960', child: Text('Reina Valera 1960')),
-        const PopupMenuItem(value: 'rv1995', child: Text('Reina Valera 1995')),
-        const PopupMenuItem(value: 'nvi', child: Text('NVI')),
-        const PopupMenuItem(value: 'pdt', child: Text('PDT')),
-      ],
     );
   }
 }

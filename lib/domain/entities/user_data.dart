@@ -1,5 +1,6 @@
 class Bookmark {
   final int id;
+  final int? folderId;
   final String versionId;
   final int bookId;
   final int chapter;
@@ -10,6 +11,7 @@ class Bookmark {
 
   const Bookmark({
     required this.id,
+    this.folderId,
     required this.versionId,
     required this.bookId,
     required this.chapter,
@@ -22,6 +24,7 @@ class Bookmark {
   factory Bookmark.fromMap(Map<String, dynamic> map) {
     return Bookmark(
       id: map['id'] as int,
+      folderId: map['folder_id'] as int?,
       versionId: map['version_id'] as String,
       bookId: map['book_id'] as int,
       chapter: map['chapter'] as int,

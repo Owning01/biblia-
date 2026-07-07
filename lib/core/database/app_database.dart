@@ -45,6 +45,10 @@ QueryExecutor _createExecutor() {
     ReadingProgress,
     PrayerRequests,
     PrayerActions,
+    BookmarkFolders,
+    SearchHistory,
+    ReadingLog,
+    NoteTags,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -65,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -78,6 +82,18 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await m.createTable(prayerRequests);
         await m.createTable(prayerActions);
+      }
+      if (from < 3) {
+        await m.createTable(bookmarkFolders);
+        await m.createTable(searchHistory);
+        await m.createTable(readingLog);
+        await m.createTable(noteTags);
+        await m.alterTable(
+          TableMigration(highlights, newColumns: [highlights.category]),
+        );
+        await m.alterTable(
+          TableMigration(bookmarks, newColumns: [bookmarks.folderId]),
+        );
       }
     },
   );
@@ -104,40 +120,17 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _seedVersions() async {
-    final versions = [
-      ('rv1960', 'Reina Valera 1960', 'RV60', 'es', 'Dominio público', 1),
-      (
-        'rv1995',
-        'Reina Valera 1995',
-        'RV95',
-        'es',
-        'Sociedades Bíblicas Unidas',
-        0,
-      ),
-      ('nvi', 'Nueva Versión Internacional', 'NVI', 'es', 'Biblica Inc.', 0),
-      (
-        'pdt',
-        'Palabra de Dios para Todos',
-        'PDT',
-        'es',
-        'Sociedades Bíblicas Unidas',
-        0,
-      ),
-    ];
-
-    for (final (id, name, abbr, lang, copyright, downloaded) in versions) {
-      await customInsert(
-        'INSERT OR IGNORE INTO bible_versions (id, name, abbreviation, language, copyright, is_downloaded) VALUES (?, ?, ?, ?, ?, ?)',
-        variables: [
-          Variable.withString(id),
-          Variable.withString(name),
-          Variable.withString(abbr),
-          Variable.withString(lang),
-          Variable.withString(copyright),
-          Variable.withInt(downloaded),
-        ],
-      );
-    }
+    await customInsert(
+      'INSERT OR IGNORE INTO bible_versions (id, name, abbreviation, language, copyright, is_downloaded) VALUES (?, ?, ?, ?, ?, ?)',
+      variables: [
+        Variable.withString('rv1960'),
+        Variable.withString('Reina Valera 1960'),
+        Variable.withString('RV60'),
+        Variable.withString('es'),
+        Variable.withString('Dominio público'),
+        Variable.withInt(1),
+      ],
+    );
   }
 
   Future<void> _seedReadingPlans() async {
@@ -243,6 +236,179 @@ class AppDatabase extends _$AppDatabase {
     ).get();
     return result.map((r) => r.data).toList();
   }
+
+  Future<Map<String, dynamic>?> getDailyVerse(String versionId) async {
+    final versionId0 = versionId;
+    final countRes = await customSelect(
+      'SELECT COUNT(*) as c FROM verses WHERE version_id = ?',
+      variables: [Variable.withString(versionId0)],
+    ).getSingle();
+    final count = countRes.data['c'] as int;
+    if (count == 0) return null;
+    final now = DateTime.now();
+    final start = DateTime(now.year, 1, 1);
+    final dayOfYear = now.difference(start).inDays;
+    final offset = dayOfYear % count;
+    final res = await customSelect(
+      'SELECT * FROM verses WHERE version_id = ? ORDER BY book_id, chapter, verse LIMIT 1 OFFSET ?',
+      variables: [Variable.withString(versionId0), Variable.withInt(offset)],
+    ).get();
+    if (res.isEmpty) return null;
+    return res.first.data;
+  }
+
+  // ---- Bookmark folders ----
+  Future<List<Map<String, dynamic>>> getBookmarkFolders() async {
+    final result = await customSelect(
+      'SELECT * FROM bookmark_folders ORDER BY created_at',
+    ).get();
+    return result.map((r) => r.data).toList();
+  }
+
+  Future<int> createBookmarkFolder(String name, String color) async {
+    return await customInsert(
+      'INSERT INTO bookmark_folders (name, color, created_at) VALUES (?, ?, ?)',
+      variables: [
+        Variable.withString(name),
+        Variable.withString(color),
+        Variable.withDateTime(DateTime.now()),
+      ],
+    );
+  }
+
+  Future<void> deleteBookmarkFolder(int id) async {
+    await customUpdate(
+      'UPDATE bookmarks SET folder_id = NULL WHERE folder_id = ?',
+      variables: [Variable.withInt(id)],
+    );
+    await customUpdate(
+      'DELETE FROM bookmark_folders WHERE id = ?',
+      variables: [Variable.withInt(id)],
+    );
+  }
+
+  Future<void> setBookmarkFolder(int bookmarkId, int? folderId) async {
+    if (folderId == null) {
+      await customUpdate(
+        'UPDATE bookmarks SET folder_id = NULL WHERE id = ?',
+        variables: [Variable.withInt(bookmarkId)],
+      );
+    } else {
+      await customUpdate(
+        'UPDATE bookmarks SET folder_id = ? WHERE id = ?',
+        variables: [Variable.withInt(folderId), Variable.withInt(bookmarkId)],
+      );
+    }
+  }
+
+  // ---- Search history ----
+  Future<void> addSearchHistory(String query) async {
+    if (query.trim().isEmpty) return;
+    await customInsert(
+      'INSERT INTO search_history (query, created_at) VALUES (?, ?)',
+      variables: [
+        Variable.withString(query.trim()),
+        Variable.withDateTime(DateTime.now()),
+      ],
+    );
+    await customUpdate(
+      'DELETE FROM search_history WHERE id NOT IN (SELECT id FROM search_history ORDER BY created_at DESC LIMIT 20)',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getSearchHistory() async {
+    final result = await customSelect(
+      'SELECT query FROM search_history GROUP BY query ORDER BY MAX(created_at) DESC LIMIT 20',
+    ).get();
+    return result.map((r) => r.data).toList();
+  }
+
+  Future<void> clearSearchHistory() async {
+    await customUpdate('DELETE FROM search_history');
+  }
+
+  // ---- Reading log / streak ----
+  Future<void> logReading(
+    String versionId,
+    int bookId,
+    int chapter,
+    int versesRead,
+  ) async {
+    final day = _todayKey();
+    await customInsert(
+      'INSERT INTO reading_log (day, version_id, book_id, chapter, verses_read) VALUES (?, ?, ?, ?, ?)',
+      variables: [
+        Variable.withString(day),
+        Variable.withString(versionId),
+        Variable.withInt(bookId),
+        Variable.withInt(chapter),
+        Variable.withInt(versesRead),
+      ],
+    );
+  }
+
+  Future<int> getReadingStreak() async {
+    final rows = await customSelect(
+      'SELECT DISTINCT day FROM reading_log ORDER BY day DESC',
+    ).get();
+    final days = rows.map((r) => r.data['day'] as String).toList();
+    if (days.isEmpty) return 0;
+    int streak = 0;
+    var expected = DateTime.now();
+    for (final d in days) {
+      final date = DateTime.tryParse(d);
+      if (date == null) continue;
+      if (!_sameDay(date, expected)) break;
+      streak++;
+      expected = expected.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  Future<int> getVersesReadToday() async {
+    final result = await customSelect(
+      'SELECT COALESCE(SUM(verses_read), 0) as total FROM reading_log WHERE day = ?',
+      variables: [Variable.withString(_todayKey())],
+    ).getSingle();
+    return result.data['total'] as int;
+  }
+
+  // ---- Note tags ----
+  Future<void> setNoteTags(int noteId, List<String> tags) async {
+    await customUpdate(
+      'DELETE FROM note_tags WHERE note_id = ?',
+      variables: [Variable.withInt(noteId)],
+    );
+    for (final tag in tags) {
+      await customInsert(
+        'INSERT INTO note_tags (note_id, tag) VALUES (?, ?)',
+        variables: [Variable.withInt(noteId), Variable.withString(tag)],
+      );
+    }
+  }
+
+  Future<List<String>> getNoteTags(int noteId) async {
+    final result = await customSelect(
+      'SELECT tag FROM note_tags WHERE note_id = ?',
+      variables: [Variable.withInt(noteId)],
+    ).get();
+    return result.map((r) => r.data['tag'] as String).toList();
+  }
+
+  Future<List<String>> getAllNoteTags() async {
+    final result = await customSelect(
+      'SELECT DISTINCT tag FROM note_tags ORDER BY tag',
+    ).get();
+    return result.map((r) => r.data['tag'] as String).toList();
+  }
+
+  String _todayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {

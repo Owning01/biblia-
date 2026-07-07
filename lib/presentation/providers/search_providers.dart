@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/database/app_database.dart' hide Verse;
+import '../../core/di/providers.dart';
 import '../../core/utils/verse_reference.dart';
 import '../../domain/entities/verse.dart';
 
@@ -55,25 +55,19 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(query: query, isSearching: true, error: null);
 
     final parsed = VerseReference.parse(query);
-    final db = _ref.read(appDatabaseProvider);
+    final repo = _ref.read(bibleRepositoryProvider);
 
     if (parsed.isReference && parsed.reference != null) {
       state = state.copyWith(reference: parsed.reference);
     }
 
     try {
-      final rows = await db.searchFts(query);
-      state = state.copyWith(
-        results: rows.map(Verse.fromMap).toList(),
-        isSearching: false,
-      );
+      final results = await repo.searchFts(query);
+      state = state.copyWith(results: results, isSearching: false);
     } catch (_) {
       try {
-        final rows = await db.searchByText(query);
-        state = state.copyWith(
-          results: rows.map(Verse.fromMap).toList(),
-          isSearching: false,
-        );
+        final results = await repo.searchByText(query);
+        state = state.copyWith(results: results, isSearching: false);
       } catch (e) {
         state = state.copyWith(
           results: [],

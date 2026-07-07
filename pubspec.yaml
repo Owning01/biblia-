@@ -40,6 +40,7 @@ dependencies:
 
   # Notificaciones
   flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.1
 
   # Utilidades
   intl: ^0.20.2

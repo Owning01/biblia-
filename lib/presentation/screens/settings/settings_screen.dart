@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/export_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../providers/settings_providers.dart';
+import '../../providers/auth_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -13,7 +17,6 @@ class SettingsScreen extends ConsumerWidget {
     final colorSchemeIndex = ref.watch(colorSchemeProvider);
     final fontSize = ref.watch(fontSizeProvider);
     final fontFamily = ref.watch(fontFamilyProvider);
-    final activeVersion = ref.watch(activeVersionProvider);
     final margin = ref.watch(readingMarginProvider);
     final verseSpacing = ref.watch(verseSpacingProvider);
 
@@ -234,36 +237,25 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _SectionTitle(title: 'Biblia'),
+          _SectionTitle(title: 'Notificaciones'),
+          const SizedBox(height: 12),
+          _NotificationsCard(),
+          const SizedBox(height: 24),
+          _SectionTitle(title: 'Datos'),
           const SizedBox(height: 12),
           _PremiumCard(
             child: _SettingRow(
-              icon: Icons.translate,
-              title: 'Version activa',
-              subtitle: _versionName(activeVersion),
-              trailing: _StyledDropdown<String>(
-                value: activeVersion,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'rv1960',
-                    child: Text('Reina Valera 1960'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'rv1995',
-                    child: Text('Reina Valera 1995'),
-                  ),
-                  DropdownMenuItem(value: 'nvi', child: Text('NVI')),
-                  DropdownMenuItem(value: 'pdt', child: Text('PDT')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    HapticFeedback.selectionClick();
-                    ref.read(activeVersionProvider.notifier).setVersion(value);
-                  }
-                },
-              ),
+              icon: Icons.backup_outlined,
+              title: 'Respaldar mis datos',
+              subtitle: 'Exporta marcadores, notas y resaltados',
+              showArrow: true,
+              onTap: () => ref.read(exportServiceProvider).shareBackup(),
             ),
           ),
+          const SizedBox(height: 24),
+          _SectionTitle(title: 'Cuenta'),
+          const SizedBox(height: 12),
+          _AccountCard(),
           const SizedBox(height: 24),
           _SectionTitle(title: 'Acerca de'),
           const SizedBox(height: 12),
@@ -292,20 +284,107 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  String _versionName(String versionId) {
-    switch (versionId) {
-      case 'rv1960':
-        return 'Reina Valera 1960';
-      case 'rv1995':
-        return 'Reina Valera 1995';
-      case 'nvi':
-        return 'NVI';
-      case 'pdt':
-        return 'PDT';
-      default:
-        return versionId;
+class _AccountCard extends ConsumerWidget {
+  const _AccountCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+    final user = authState.valueOrNull;
+    return _PremiumCard(
+      child: _SettingRow(
+        icon: Icons.person_outlined,
+        title: user != null ? user.email ?? 'Conectado' : 'Iniciar sesión',
+        subtitle: user != null
+            ? 'Toca para cerrar sesión'
+            : 'Sincroniza tus datos en la nube',
+        showArrow: true,
+        onTap: () async {
+          if (user != null) {
+            await ref.read(authServiceProvider).signOut();
+            ref.invalidate(authStateProvider);
+          } else {
+            context.push('/auth');
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _NotificationsCard extends ConsumerWidget {
+  const _NotificationsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(notificationSettingsProvider);
+    final notifier = ref.read(notificationSettingsProvider.notifier);
+
+    Future<void> pickTime(bool isDaily) async {
+      final initial = isDaily ? settings.dailyVerseTime : settings.reminderTime;
+      final picked = await showTimePicker(
+        context: context,
+        initialTime: initial,
+      );
+      if (picked != null) {
+        if (isDaily) {
+          notifier.setDailyVerseTime(picked);
+        } else {
+          notifier.setReminderTime(picked);
+        }
+      }
     }
+
+    return _PremiumCard(
+      child: Column(
+        children: [
+          SwitchListTile(
+            secondary: const Icon(Icons.auto_awesome_outlined),
+            title: const Text('Versiculo del dia'),
+            value: settings.dailyVerseEnabled,
+            onChanged: (v) {
+              notifier.setDailyVerse(v);
+              if (v) {
+                ref.read(notificationServiceProvider).requestPermission();
+              }
+            },
+          ),
+          if (settings.dailyVerseEnabled)
+            _SettingRow(
+              icon: Icons.schedule_outlined,
+              title: 'Hora del versiculo',
+              subtitle: settings.dailyVerseTime.format(context),
+              showArrow: true,
+              onTap: () => pickTime(true),
+            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(height: 1),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.notifications_active_outlined),
+            title: const Text('Recordatorio de lectura'),
+            value: settings.reminderEnabled,
+            onChanged: (v) {
+              notifier.setReminder(v);
+              if (v) {
+                ref.read(notificationServiceProvider).requestPermission();
+              }
+            },
+          ),
+          if (settings.reminderEnabled)
+            _SettingRow(
+              icon: Icons.schedule_outlined,
+              title: 'Hora del recordatorio',
+              subtitle: settings.reminderTime.format(context),
+              showArrow: true,
+              onTap: () => pickTime(false),
+            ),
+        ],
+      ),
+    );
   }
 }
 

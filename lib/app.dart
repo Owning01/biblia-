@@ -3,14 +3,43 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/router/app_router.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/settings_providers.dart';
 
-class BibliaApp extends ConsumerWidget {
+class BibliaApp extends ConsumerStatefulWidget {
   const BibliaApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BibliaApp> createState() => _BibliaAppState();
+}
+
+class _BibliaAppState extends ConsumerState<BibliaApp> {
+  bool _notificationsReady = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_notificationsReady) {
+      _notificationsReady = true;
+      _initNotifications();
+    }
+  }
+
+  Future<void> _initNotifications() async {
+    final notifications = ref.read(notificationServiceProvider);
+    await notifications.init();
+    final settings = ref.read(notificationSettingsProvider);
+    if (settings.dailyVerseEnabled) {
+      notifications.scheduleDailyVerse(settings.dailyVerseTime);
+    }
+    if (settings.reminderEnabled) {
+      notifications.scheduleReadingReminder(settings.reminderTime);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(appThemeModeProvider);
     final colorSchemeIndex = ref.watch(colorSchemeProvider);
     final router = ref.watch(appRouterProvider);
@@ -25,12 +54,24 @@ class BibliaApp extends ConsumerWidget {
     final darkTheme = AppTheme.fromMode(AppThemeMode.dark, scheme: scheme);
 
     final textTheme = _buildTextTheme(fontFamily);
+    final onSurfaceLight = lightTheme.colorScheme.onSurface;
+    final onSurfaceDark = darkTheme.colorScheme.onSurface;
 
     return MaterialApp.router(
       title: 'Biblia',
       debugShowCheckedModeBanner: false,
-      theme: lightTheme.copyWith(textTheme: textTheme),
-      darkTheme: darkTheme.copyWith(textTheme: textTheme),
+      theme: lightTheme.copyWith(
+        textTheme: textTheme.apply(
+          bodyColor: onSurfaceLight,
+          displayColor: onSurfaceLight,
+        ),
+      ),
+      darkTheme: darkTheme.copyWith(
+        textTheme: textTheme.apply(
+          bodyColor: onSurfaceDark,
+          displayColor: onSurfaceDark,
+        ),
+      ),
       themeMode: _resolveThemeMode(themeMode),
       routerConfig: router,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

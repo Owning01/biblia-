@@ -34,6 +34,7 @@ class Verses extends Table {
 
 class Bookmarks extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get folderId => integer().nullable()();
   TextColumn get versionId => text()();
   IntColumn get bookId => integer()();
   IntColumn get chapter => integer()();
@@ -50,7 +51,36 @@ class Highlights extends Table {
   IntColumn get verseStart => integer()();
   IntColumn get verseEnd => integer()();
   TextColumn get color => text()(); // hex color
+  TextColumn get category => text().nullable()(); // named category label
   DateTimeColumn get createdAt => dateTime()();
+}
+
+class BookmarkFolders extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get color => text().withDefault(const Constant('#F2C94C'))();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class SearchHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get query => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class ReadingLog extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get day => text()(); // YYYY-MM-DD
+  TextColumn get versionId => text()();
+  IntColumn get bookId => integer()();
+  IntColumn get chapter => integer()();
+  IntColumn get versesRead => integer().withDefault(const Constant(0))();
+}
+
+class NoteTags extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get noteId => integer().references(Notes, #id)();
+  TextColumn get tag => text()();
 }
 
 class Notes extends Table {
