@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /prayer_requests/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['authorName', 'content', 'createdAt'])
+                    && request.resource.data.authorName is string
+                    && request.resource.data.content is string
+                    && request.resource.data.content.size() <= 2000;
+      allow delete: if request.auth != null
+                    && resource.data.authorName == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /prayer_actions/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['requestId', 'userName', 'createdAt']);
+      allow delete: if false;
+      allow update: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

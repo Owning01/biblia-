@@ -1,10 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' hide Column;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import '../../../core/database/app_database.dart';
 import '../../providers/settings_providers.dart';
-import '../../providers/user_data_providers.dart';
+
+final prayerRequestsStream = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('prayer_requests')
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map(
+        (snap) => snap.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return data;
+        }).toList(),
+      );
+});
+
+final hasPrayedStream =
+    StreamProvider.family<bool, ({String requestId, String userName})>((
+      ref,
+      params,
+    ) {
+      return FirebaseFirestore.instance
+          .collection('prayer_actions')
+          .where('requestId', isEqualTo: params.requestId)
+          .where('userName', isEqualTo: params.userName)
+          .snapshots()
+          .map((snap) => snap.docs.isNotEmpty);
+    });
 
 class CommunityScreen extends ConsumerWidget {
   const CommunityScreen({super.key});
@@ -12,7 +37,7 @@ class CommunityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userName = ref.watch(userNameProvider);
-    final requestsAsync = ref.watch(prayerRequestsProvider);
+    final requestsAsync = ref.watch(prayerRequestsStream);
 
     return Scaffold(
       appBar: AppBar(
@@ -350,17 +375,15 @@ class _NewRequestCard extends ConsumerWidget {
               child: FilledButton(
                 onPressed: () async {
                   if (controller.text.trim().isEmpty) return;
-                  final db = ref.read(appDatabaseProvider);
-                  await db.customInsert(
-                    'INSERT INTO prayer_requests (author_name, content, is_anonymous, created_at) VALUES (?, ?, ?, ?)',
-                    variables: [
-                      Variable.withString(userName),
-                      Variable.withString(controller.text.trim()),
-                      Variable.withInt(isAnon.value ? 1 : 0),
-                      Variable.withString(DateTime.now().toIso8601String()),
-                    ],
-                  );
-                  ref.invalidate(prayerRequestsProvider);
+                  await FirebaseFirestore.instance
+                      .collection('prayer_requests')
+                      .add({
+                        'authorName': userName,
+                        'content': controller.text.trim(),
+                        'isAnonymous': isAnon.value,
+                        'prayerCount': 0,
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text('Publicar'),
@@ -388,14 +411,15 @@ class _PrayerCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final id = request['id'] as int;
-    final authorName = request['author_name'] as String;
+    final id = request['id'] as String;
+    final authorName = request['authorName'] as String;
     final content = request['content'] as String;
-    final isAnonymous = request['is_anonymous'] as int == 1;
-    final prayerCount = request['prayer_count'] as int;
-    final createdAt = DateTime.parse(request['created_at'] as String);
+    final isAnonymous = request['isAnonymous'] as bool;
+    final prayerCount = request['prayerCount'] as int;
+    final ts = request['createdAt'] as Timestamp?;
+    final createdAt = ts?.toDate() ?? DateTime.now();
     final hasPrayedAsync = ref.watch(
-      hasPrayedProvider((requestId: id, userName: userName)),
+      hasPrayedStream((requestId: id, userName: userName)),
     );
 
     return Container(
@@ -465,23 +489,17 @@ class _PrayerCard extends ConsumerWidget {
                       active: hasPrayed,
                       onTap: () async {
                         if (hasPrayed) return;
-                        final db = ref.read(appDatabaseProvider);
-                        await db.customInsert(
-                          'INSERT INTO prayer_actions (request_id, user_name, created_at) VALUES (?, ?, ?)',
-                          variables: [
-                            Variable.withInt(id),
-                            Variable.withString(userName),
-                            Variable.withString(
-                              DateTime.now().toIso8601String(),
-                            ),
-                          ],
-                        );
-                        await db.customInsert(
-                          'UPDATE prayer_requests SET prayer_count = prayer_count + 1 WHERE id = ?',
-                          variables: [Variable.withInt(id)],
-                        );
-                        ref.invalidate(prayerRequestsProvider);
-                        ref.invalidate(hasPrayedProvider);
+                        await FirebaseFirestore.instance
+                            .collection('prayer_actions')
+                            .add({
+                              'requestId': id,
+                              'userName': userName,
+                              'createdAt': FieldValue.serverTimestamp(),
+                            });
+                        await FirebaseFirestore.instance
+                            .collection('prayer_requests')
+                            .doc(id)
+                            .update({'prayerCount': FieldValue.increment(1)});
                       },
                     );
                   },
